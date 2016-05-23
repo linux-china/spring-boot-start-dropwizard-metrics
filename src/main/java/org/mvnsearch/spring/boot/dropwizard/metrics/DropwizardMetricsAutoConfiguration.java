@@ -6,7 +6,6 @@ import com.codahale.metrics.annotation.Metric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -39,8 +38,13 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                 * Proxy use java.lang.reflect.Proxy#isProxyClass
                 */
             Class<?> objClz = obj.getClass();
+            Object targetObj = obj;
             if (org.springframework.aop.support.AopUtils.isAopProxy(obj)) {
                 objClz = org.springframework.aop.support.AopUtils.getTargetClass(obj);
+                try {
+                    targetObj = ((Advised) obj).getTargetSource().getTarget();
+                } catch (Exception ignore) {
+                }
             }
             //metrics gauge
             for (Method m : objClz.getDeclaredMethods()) {
@@ -63,11 +67,11 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                     if (ClassUtils.isAssignable(com.codahale.metrics.Metric.class, field.getType())) {
                         try {
                             field.setAccessible(true);
-                            if (field.get(obj) != null) {
-                                com.codahale.metrics.Metric metric = (com.codahale.metrics.Metric) field.get(obj);
+                            if (field.get(targetObj) != null) {
+                                com.codahale.metrics.Metric metric = (com.codahale.metrics.Metric) field.get(targetObj);
                                 metrics.register(metricAnnotation.name(), metric);
                             } else {
-                                field.set(getTargetObject(obj), metrics.histogram(metricAnnotation.name()));
+                                field.set(targetObj, metrics.histogram(metricAnnotation.name()));
                             }
                         } catch (Exception e) {
                             log.error("Metric-Histogram:" + field.getName(), e);
@@ -81,14 +85,5 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
     @Bean
     public DropwizardMetricsAspect dropwizardMetricsAspect() {
         return new DropwizardMetricsAspect();
-    }
-
-    @SuppressWarnings("unchecked")
-    private <T> T getTargetObject(Object proxy) throws Exception {
-        if (AopUtils.isAopProxy(proxy)) {
-            return (T) ((Advised) proxy).getTargetSource().getTarget();
-        } else {
-            return (T) proxy;
-        }
     }
 }
