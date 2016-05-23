@@ -2,6 +2,8 @@ spring-boot-start-dropwizard-metrics
 ====================================
 Spring boot starter for DropWizard Metrics Annotation。
 
+[![Build Status](https://travis-ci.org/linux-china/spring-boot-start-dropwizard-metrics.svg?branch=master)](https://travis-ci.org/linux-china/spring-boot-start-dropwizard-metrics)
+
 ### 如何使用
 
 * 在Spring Boot项目的pom.xml中添加以下依赖:
