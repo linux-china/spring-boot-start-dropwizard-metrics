@@ -25,5 +25,6 @@ public class MetricsDemoApplicationTest {
     public void testSpike() throws Exception {
         demoService.getName();
         Assert.assertEquals(metrics.getCounters().get("getName").getCount(), 1L);
+        Assert.assertEquals(metrics.getGauges().get("rate-1").getValue(),26.5);
     }
 }
