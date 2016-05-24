@@ -50,10 +50,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
             for (Method m : objClz.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Gauge.class)) {
                     Gauge gaugeAnnotation = m.getAnnotation(Gauge.class);
-                    String metricName = gaugeAnnotation.name();
-                    if (metricName.isEmpty()) {
-                        metricName = MetricRegistry.name(objClz.getName(), m.getName());
-                    }
+                    String metricName = getMetricName(objClz, gaugeAnnotation.name(), m.getName(), gaugeAnnotation.absolute());
                     metrics.register(metricName, (com.codahale.metrics.Gauge<Number>) () -> {
                         try {
                             return (Number) m.invoke(obj);
@@ -73,10 +70,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                             field.setAccessible(true);
                             if (field.get(targetObj) != null) {
                                 com.codahale.metrics.Metric metric = (com.codahale.metrics.Metric) field.get(targetObj);
-                                String metricName = metricAnnotation.name();
-                                if (metricName.isEmpty()) {
-                                    metricName = MetricRegistry.name(objClz.getName(), field.getName());
-                                }
+                                String metricName = getMetricName(objClz, metricAnnotation.name(), field.getName(), metricAnnotation.absolute());
                                 metrics.register(metricName, metric);
                             } else {
                                 field.set(targetObj, metrics.histogram(metricAnnotation.name()));
@@ -87,6 +81,24 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * get metric name
+     *
+     * @param clazz       current class
+     * @param metricName  metric name in annotation
+     * @param elementName element name: field or method name
+     * @param absolute    absolute
+     * @return metric name
+     */
+    private String getMetricName(Class clazz, String metricName, String elementName, boolean absolute) {
+        String absoluteName = metricName.isEmpty() ? elementName : metricName;
+        if (absolute) {
+            return absoluteName;
+        } else {
+            return MetricRegistry.name(clazz.getName(), absoluteName);
         }
     }
 
