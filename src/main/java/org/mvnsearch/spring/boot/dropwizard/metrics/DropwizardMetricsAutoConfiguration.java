@@ -6,6 +6,7 @@ import com.codahale.metrics.annotation.Metric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
@@ -38,13 +39,9 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                 * Proxy use java.lang.reflect.Proxy#isProxyClass
                 */
             Class<?> objClz = obj.getClass();
-            Object targetObj = obj;
+            Object targetObj = getTargetObject(obj);
             if (org.springframework.aop.support.AopUtils.isAopProxy(obj)) {
                 objClz = org.springframework.aop.support.AopUtils.getTargetClass(obj);
-                try {
-                    targetObj = ((Advised) obj).getTargetSource().getTarget();
-                } catch (Exception ignore) {
-                }
             }
             //metrics gauge
             for (Method m : objClz.getDeclaredMethods()) {
@@ -53,7 +50,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                     String metricName = getMetricName(objClz, gaugeAnnotation.name(), m.getName(), gaugeAnnotation.absolute());
                     metrics.register(metricName, (com.codahale.metrics.Gauge<Number>) () -> {
                         try {
-                            return (Number) m.invoke(obj);
+                            return (Number) m.invoke(targetObj);
                         } catch (Exception e) {
                             log.error("Metric-Gauge:" + m.getName(), e);
                         }
@@ -100,6 +97,17 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
         } else {
             return MetricRegistry.name(clazz.getName(), absoluteName);
         }
+    }
+
+    protected <T> T getTargetObject(Object proxy) {
+        if (AopUtils.isAopProxy(proxy)) {
+            try {
+                return (T) ((Advised) proxy).getTargetSource().getTarget();
+            } catch (Exception ignore) {
+
+            }
+        }
+        return (T) proxy;
     }
 
     @Bean
