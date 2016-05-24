@@ -99,7 +99,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
         }
     }
 
-    protected <T> T getTargetObject(Object proxy) {
+    private <T> T getTargetObject(Object proxy) {
         if (AopUtils.isAopProxy(proxy)) {
             try {
                 return (T) ((Advised) proxy).getTargetSource().getTarget();
