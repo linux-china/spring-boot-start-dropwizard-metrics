@@ -50,7 +50,11 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
             for (Method m : objClz.getDeclaredMethods()) {
                 if (m.isAnnotationPresent(Gauge.class)) {
                     Gauge gaugeAnnotation = m.getAnnotation(Gauge.class);
-                    metrics.register(gaugeAnnotation.name(), (com.codahale.metrics.Gauge<Number>) () -> {
+                    String metricName = gaugeAnnotation.name();
+                    if (metricName.isEmpty()) {
+                        metricName = MetricRegistry.name(objClz.getName(), m.getName());
+                    }
+                    metrics.register(metricName, (com.codahale.metrics.Gauge<Number>) () -> {
                         try {
                             return (Number) m.invoke(obj);
                         } catch (Exception e) {
@@ -69,7 +73,11 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                             field.setAccessible(true);
                             if (field.get(targetObj) != null) {
                                 com.codahale.metrics.Metric metric = (com.codahale.metrics.Metric) field.get(targetObj);
-                                metrics.register(metricAnnotation.name(), metric);
+                                String metricName = metricAnnotation.name();
+                                if (metricName.isEmpty()) {
+                                    metricName = MetricRegistry.name(objClz.getName(), field.getName());
+                                }
+                                metrics.register(metricName, metric);
                             } else {
                                 field.set(targetObj, metrics.histogram(metricAnnotation.name()));
                             }
