@@ -86,4 +86,9 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
     public DropwizardMetricsAspect dropwizardMetricsAspect() {
         return new DropwizardMetricsAspect();
     }
+
+    @Bean
+    public DropwizardMetricsEndpoint dropwizardMetricsEndpoint() {
+        return new DropwizardMetricsEndpoint();
+    }
 }
