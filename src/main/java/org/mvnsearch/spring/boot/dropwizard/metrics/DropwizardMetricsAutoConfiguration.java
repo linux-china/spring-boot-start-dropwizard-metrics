@@ -52,7 +52,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                         try {
                             return (Number) m.invoke(targetObj);
                         } catch (Exception e) {
-                            log.error("Metric-Gauge:" + m.getName(), e);
+                            log.error("Metric-Gauge:" + metricName, e);
                         }
                         return null;
                     });
@@ -63,17 +63,17 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
                 if (field.isAnnotationPresent(Metric.class)) {
                     Metric metricAnnotation = field.getAnnotation(Metric.class);
                     if (ClassUtils.isAssignable(com.codahale.metrics.Metric.class, field.getType())) {
+                        String metricName = getMetricName(objClz, metricAnnotation.name(), field.getName(), metricAnnotation.absolute());
                         try {
                             field.setAccessible(true);
                             if (field.get(targetObj) != null) {
                                 com.codahale.metrics.Metric metric = (com.codahale.metrics.Metric) field.get(targetObj);
-                                String metricName = getMetricName(objClz, metricAnnotation.name(), field.getName(), metricAnnotation.absolute());
                                 metrics.register(metricName, metric);
                             } else {
-                                field.set(targetObj, metrics.histogram(metricAnnotation.name()));
+                                field.set(targetObj, metrics.histogram(metricName));
                             }
                         } catch (Exception e) {
-                            log.error("Metric-Histogram:" + field.getName(), e);
+                            log.error("Metric-Histogram:" + metricName, e);
                         }
                     }
                 }
