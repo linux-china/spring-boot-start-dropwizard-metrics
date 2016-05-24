@@ -99,6 +99,7 @@ public class DropwizardMetricsAutoConfiguration implements ApplicationContextAwa
         }
     }
 
+    @SuppressWarnings("unchecked")
     private <T> T getTargetObject(Object proxy) {
         if (AopUtils.isAopProxy(proxy)) {
             try {
